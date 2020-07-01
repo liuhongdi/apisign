@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" language="JavaScript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" language="JavaScript" src="/js/md5.js"></script>
+</head>
+<body>
+<a href="javascript:login('right')">login(right)</a><br/>
+<a href="javascript:login('error')">login(error)</a><br/>
+<script>
+    //vars
+    var appId="wap";
+    var version="1.0";
+
+    //得到sign
+    function getsign(appSecret,timestamp,nonce) {
+        var origin = appId + appSecret + timestamp +  nonce + version;
+        console.log("origin:"+origin);
+        var sign = hex_md5(origin);
+        return sign;
+    }
+
+    //访问login这个api
+    //说明：这里仅仅是举例子，在ios/android开发中，appSecret要以二进制的形式编译保存
+    function login(isright) {
+        //right secret
+        var appSecret_right="30c722c6acc64306a88dd93a814c9f0a";
+        //error secret
+        var appSecret_error="aabbccdd";
+        var timestamp = parseInt((new Date()).getTime()/1000);
+        var nonce = Math.floor(Math.random()*8999)+1000;
+
+        var sign = "";
+        if (isright == 'right') {
+             sign = getsign(appSecret_right,timestamp,nonce);
+        } else {
+             sign = getsign(appSecret_error,timestamp,nonce);
+        }
+
+        var postdata = {
+            username:"a",
+            password:"b"
+        }
+
+        $.ajax({
+            type:"POST",
+            url:"/user/login",
+            data:postdata,
+            //返回数据的格式
+            datatype: "json",
+            //在请求之前调用的函数
+            beforeSend: function(request) {
+                request.setRequestHeader("appId", appId);
+                request.setRequestHeader("timestamp", timestamp);
+                request.setRequestHeader("sign", sign);
+                request.setRequestHeader("nonce", nonce);
+            },
+            //成功返回之后调用的函数
+            success:function(data){
+                if (data.status == 0) {
+                    alert('success:'+data.msg);
+                } else {
+                    alert("failed:"+data.msg);
+                }
+            },
+            //调用执行后调用的函数
+            complete: function(XMLHttpRequest, textStatus){
+                //complete
+            },
+            //调用出错执行的函数
+            error: function(){
+                //请求出错处理
+            }
+        });
+
+    }
+</script>
+
+</body>
+</html>
